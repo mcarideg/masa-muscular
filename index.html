@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Masa muscular</title>
+<title>PrepTrack</title>
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Masa muscular">
+<meta name="apple-mobile-web-app-title" content="PrepTrack">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -41,7 +41,10 @@ img{max-width:100%}
   --bg:#000000; --surface:#151517; --ink:#FFFFFF; --text:#E2E2E6; --muted:#8E8E96; --line:#26262A; --track:#2A2A2E;
   --prot:#FF6F67; --kcal:#FFFFFF; --v1:#7C93FF; --v2:#3CCB91; --v3:#FFA066; --warn-bg:#2A2214; --warn:#F0B24A;
   --shadow:none; color-scheme:dark}
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+button,a,label,input{touch-action:manipulation}
+button,a{transition:transform .12s ease,opacity .12s ease}
+button:active,a:active{transform:scale(.96);opacity:.85}
 body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   padding-block:16px calc(var(--navh) + 28px + env(safe-area-inset-bottom,0px))}
@@ -285,7 +288,27 @@ details.more[open] summary::after{transform:rotate(-135deg);margin-top:4px}
 .nav a svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .nav a[aria-current="page"]{color:var(--ink)}
 @media (max-width:370px){.hero .big{font-size:2.4rem}.mini{padding:14px}.mini .big{font-size:1.25rem}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Movimiento */
+@keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.7)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+@keyframes stepIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+.view.enter{animation:enter .28s cubic-bezier(.2,.8,.2,1)}
+#meals.fade>*{animation:fade .3s cubic-bezier(.2,.8,.2,1) both}
+#meals.fade>*:nth-child(2){animation-delay:.04s}
+#meals.fade>*:nth-child(3){animation-delay:.08s}
+.eat.pop{animation:pop .32s cubic-bezier(.2,.8,.2,1)}
+.meal{transition:opacity .3s ease}
+.eat,.eat svg{transition:background-color .25s ease,stroke .25s ease}
+.wday,.wday .c{transition:background-color .2s ease,border-color .25s ease,box-shadow .2s ease}
+.item input{transition:background-color .2s ease,border-color .2s ease}
+.item .nm,.item .fi{transition:color .25s ease,opacity .25s ease}
+.kmode:not([hidden]){animation:up .32s cubic-bezier(.2,.8,.2,1)}
+.kbody.go{animation:stepIn .25s cubic-bezier(.2,.8,.2,1)}
+.nav a{transition:color .2s ease}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
 <div class="wrap">
@@ -293,7 +316,7 @@ details.more[open] summary::after{transform:rotate(-135deg);margin-top:4px}
   <!-- HOY -->
   <section class="view" id="v-hoy">
     <div class="top">
-      <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-14 3 8) translate(0 -2.2)"><rect x="2.5" y="8" width="19" height="3" rx="1.3"/></g><path d="M3.4 11h17.2"/><path d="M4 11v5.8a2.6 2.6 0 0 0 2.6 2.6h10.8a2.6 2.6 0 0 0 2.6-2.6V11"/></svg></span><h1>Masa muscular</h1></div>
+      <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-14 3 8) translate(0 -2.2)"><rect x="2.5" y="8" width="19" height="3" rx="1.3"/></g><path d="M3.4 11h17.2"/><path d="M4 11v5.8a2.6 2.6 0 0 0 2.6 2.6h10.8a2.6 2.6 0 0 0 2.6-2.6V11"/></svg></span><h1>PrepTrack</h1></div>
       <span class="pill" id="hoyVar"><span></span></span>
     </div>
     <div class="week" id="week"></div>
@@ -380,10 +403,20 @@ const I={
  pan:'<path d="M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /> <path d="M14 3a5 5 0 0 1 4.872 6.13a3 3 0 0 1 .178 5.681a3 3 0 1 1 -4.684 3.626a5 5 0 1 1 -8.662 -5a5 5 0 1 1 4.645 -8.856a4.982 4.982 0 0 1 3.651 -1.585l0 .004" />',
  meals:'<svg class="ic" viewBox="0 0 24 24"><path d="M7 3v8M5 3v4a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 0-3 2-3 5s1 4 3 4v9"/></svg>'
 };
-function ring(size,stroke,frac,color,icon){
-  const r=(size-stroke)/2,C=2*Math.PI*r,f=Math.max(0,Math.min(1,frac));
-  return `<svg class="r" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle class="trk" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}"/><circle class="val" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}" stroke="${color}" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-f)}"/></svg><span class="mid">${icon||""}</span>`;
+const prevFrac={};
+function ring(size,stroke,frac,color,icon,key){
+  const r=(size-stroke)/2,C=2*Math.PI*r,f=Math.max(0,Math.min(1,frac)),pf=key in prevFrac?prevFrac[key]:0;
+  if(key)prevFrac[key]=f;
+  return `<svg class="r" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle class="trk" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}"/><circle class="val" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}" stroke="${color}" stroke-dasharray="${C}" style="stroke-dashoffset:${C*(1-pf)}" data-to="${C*(1-f)}"/></svg><span class="mid">${icon||""}</span>`;
 }
+function animateRings(){requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelectorAll(".val[data-to]").forEach(c=>{c.style.strokeDashoffset=c.dataset.to;c.removeAttribute("data-to")})))}
+/* Números que cuentan hasta su nuevo valor */
+const numPrev={};
+function countTo(el,to,f,key){const from=key in numPrev?numPrev[key]:to;numPrev[key]=to;
+  if(from===to||matchMedia("(prefers-reduced-motion: reduce)").matches){el.textContent=f(to);return}
+  const t0=performance.now(),d=450;cancelAnimationFrame(el._raf);
+  const step=t=>{const x=Math.min(1,(t-t0)/d),e=1-Math.pow(1-x,3);el.textContent=f(Math.round(from+(to-from)*e));if(x<1)el._raf=requestAnimationFrame(step)};
+  el._raf=requestAnimationFrame(step)}
 
 /* ---------- Iconos de alimentos ---------- */
 const FP={
@@ -442,18 +475,7 @@ function dayMeals(i){const v=V[ROT[i]];return[
 function renderHoy(){
   const v=V[ROT[sel]],ms=dayMeals(sel),e=eaten[sel]||[];
   const pv=document.getElementById("hoyVar");pv.style.setProperty("--c",v.c);pv.querySelector("span").textContent="V"+ROT[sel]+" · "+v.name;
-  document.getElementById("week").innerHTML=DAYS.map((d,i)=>{const n=(eaten[i]||[]).filter(Boolean).length;
-    return `<button class="wday ${n===3?"full":n?"part":""}" data-i="${i}" aria-pressed="${i===sel}" style="--c:${V[ROT[i]].c}"><span class="l">${INI[i]}</span><span class="c">${dateOf(i)}</span></button>`}).join("");
-  document.querySelectorAll(".wday").forEach(b=>b.onclick=()=>{sel=+b.dataset.i;renderHoy()});
-  const tk=ms.reduce((a,m)=>a+m.kcal,0),tp=ms.reduce((a,m)=>a+m.p,0);
-  const k=ms.reduce((a,m,i)=>a+(e[i]?m.kcal:0),0),p=ms.reduce((a,m,i)=>a+(e[i]?m.p:0),0),done=e.filter(Boolean).length;
-  document.getElementById("kLeft").textContent=fmt(tk-k);
-  document.getElementById("kLbl").innerHTML=`Calorías restantes · <b class="num">${fmt(tk)}</b>`;
-  document.getElementById("kRing").innerHTML=ring(104,10,k/tk,"var(--kcal)",I.flame);
-  document.getElementById("pLeft").textContent=(tp-p)+" g";
-  document.getElementById("pRing").innerHTML=ring(72,8,p/tp,"var(--prot)",`<span style="color:var(--prot)">${I.bolt}</span>`);
-  document.getElementById("mDone").textContent=done+"/3";
-  document.getElementById("mRing").innerHTML=ring(72,8,done/3,"var(--ink)",I.meals);
+  renderWeek();statsHoy();
   document.getElementById("mealsTitle").textContent=sel===todayIdx?"Comidas de hoy":"Comidas";
   document.getElementById("dayName").textContent=DAYS[sel];
   const al=[];
@@ -474,7 +496,30 @@ function renderHoy(){
       </div>
       <div class="ing">${m.items.map(([q,n])=>`<span><i>${emo(n)}</i>${q?`<b>${q}</b> `:""}${n}</span>`).join("")}</div>
     </article>`).join("");
-  document.querySelectorAll(".eat").forEach(b=>b.onclick=()=>{const a=eaten[sel]||[];a[+b.dataset.i]=!a[+b.dataset.i];eaten[sel]=a;store.set(weekKey,eaten);renderHoy()});
+  document.querySelectorAll(".eat").forEach(b=>b.onclick=()=>{const i=+b.dataset.i,a=eaten[sel]||[];a[i]=!a[i];eaten[sel]=a;store.set(weekKey,eaten);
+    const card=b.closest(".meal");card.classList.toggle("done",a[i]);b.setAttribute("aria-pressed",!!a[i]);
+    if(a[i]){b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop")}
+    renderWeek();statsHoy()});
+  const box=document.getElementById("meals");box.classList.remove("fade");void box.offsetWidth;box.classList.add("fade");
+}
+function renderWeek(){
+  const el=document.getElementById("week");
+  if(!el.children.length){el.innerHTML=DAYS.map((d,i)=>`<button class="wday" data-i="${i}" style="--c:${V[ROT[i]].c}"><span class="l">${INI[i]}</span><span class="c">${dateOf(i)}</span></button>`).join("");
+    el.querySelectorAll(".wday").forEach(b=>b.onclick=()=>{if(sel===+b.dataset.i)return;sel=+b.dataset.i;renderHoy()})}
+  [...el.children].forEach((b,i)=>{const n=(eaten[i]||[]).filter(Boolean).length;b.classList.toggle("full",n===3);b.classList.toggle("part",n>0&&n<3);b.setAttribute("aria-pressed",i===sel)});
+}
+function statsHoy(){
+  const ms=dayMeals(sel),e=eaten[sel]||[];
+  const tk=ms.reduce((a,m)=>a+m.kcal,0),tp=ms.reduce((a,m)=>a+m.p,0);
+  const k=ms.reduce((a,m,i)=>a+(e[i]?m.kcal:0),0),p=ms.reduce((a,m,i)=>a+(e[i]?m.p:0),0),done=e.filter(Boolean).length;
+  countTo(document.getElementById("kLeft"),tk-k,fmt,"k");
+  document.getElementById("kLbl").innerHTML=`Calorías restantes · <b class="num">${fmt(tk)}</b>`;
+  document.getElementById("kRing").innerHTML=ring(104,10,k/tk,"var(--kcal)",I.flame,"k");
+  countTo(document.getElementById("pLeft"),tp-p,x=>x+" g","p");
+  document.getElementById("pRing").innerHTML=ring(72,8,p/tp,"var(--prot)",`<span style="color:var(--prot)">${I.bolt}</span>`,"p");
+  countTo(document.getElementById("mDone"),done,x=>x+"/3","m");
+  document.getElementById("mRing").innerHTML=ring(72,8,done/3,"var(--ink)",I.meals,"m");
+  animateRings();
 }
 
 /* ---------- Compra ---------- */
@@ -487,12 +532,18 @@ const AISLES=[
 let got=store.get("shop2",{});
 function renderCompra(){
   const all=AISLES.flatMap(a=>a[1].map(x=>x[0])),n=all.filter(x=>got[x]).length;
-  document.getElementById("shopNum").innerHTML=`${n}<small> / ${all.length}</small>`;
-  document.getElementById("shopTxt").textContent=n===all.length?"Todo en el carro":"en el carro · para 7 días";
-  document.getElementById("shopRing").innerHTML=ring(80,9,n/all.length,"var(--v2)",`<span style="color:var(--v2)">${I.check}</span>`);
+  shopStats();
   document.getElementById("aisles").innerHTML=AISLES.map(([z,xs],zi)=>{const c=xs.filter(x=>got[x[0]]).length;
     return `<div class="card aisle"><h3><span>${z}</span><span class="num">${c}/${xs.length}</span></h3>${xs.map(([nm,q],i)=>`<label class="item"><input type="checkbox" id="i${zi}-${i}" data-x="${nm}" ${got[nm]?"checked":""}><span class="fi">${emo(nm)}</span><span class="nm">${nm}</span><span class="qt">${q}</span></label>`).join("")}</div>`}).join("");
-  document.querySelectorAll("#aisles input").forEach(c=>c.onchange=()=>{got[c.dataset.x]=c.checked;store.set("shop2",got);renderCompra()});
+  document.querySelectorAll("#aisles input").forEach(c=>c.onchange=()=>{got[c.dataset.x]=c.checked;store.set("shop2",got);
+    const card=c.closest(".aisle"),ins=[...card.querySelectorAll("input")];card.querySelector("h3 .num").textContent=ins.filter(x=>x.checked).length+"/"+ins.length;shopStats()});
+}
+function shopStats(){
+  const all=AISLES.flatMap(a=>a[1].map(x=>x[0])),n=all.filter(x=>got[x]).length;
+  document.getElementById("shopNum").innerHTML=`${n}<small> / ${all.length}</small>`;
+  document.getElementById("shopTxt").textContent=n===all.length?"Todo en el carro":"en el carro · para 7 días";
+  document.getElementById("shopRing").innerHTML=ring(80,9,n/all.length,"var(--v2)",`<span style="color:var(--v2)">${I.check}</span>`,"shop");
+  animateRings();
 }
 document.getElementById("shopReset").onclick=()=>{got={};store.set("shop2",got);renderCompra()};
 
@@ -619,7 +670,8 @@ function renderCocinar(){
   if(s.boxes) h+=`<div class="boxes">${s.boxes.map(boxHTML).join("")}</div>`;
   if(s.tip) h+=`<div class="knext"><b>Consejo</b>${s.tip}</div>`;
   if(i<n-1) h+=`<div class="knext"><b>Después</b>${steps[i+1].t}</div>`;
-  document.getElementById("step").innerHTML=h;
+  const stepEl=document.getElementById("step");stepEl.innerHTML=h;
+  if(stepEl.dataset.k!==sess+i){stepEl.dataset.k=sess+i;stepEl.classList.remove("go");void stepEl.offsetWidth;stepEl.classList.add("go")}
   const kr=document.getElementById("kReset");
   if(kr) kr.onclick=()=>resetT(getT(sess,i));
   document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{const [se,j]=b.dataset.go.split("-");sess=se;stepI[se]=+j;store.set("step2",stepI);renderCocinar();document.getElementById("cRun").scrollTop=0});
@@ -643,7 +695,8 @@ document.getElementById("nextStep").onclick=goNext;
 const VIEWS=["hoy","compra","cocinar"];
 function route(){
   const v=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):"hoy";
-  VIEWS.forEach(x=>document.getElementById("v-"+x).hidden=x!==v);
+  VIEWS.forEach(x=>{const el=document.getElementById("v-"+x),show=x===v;
+    if(show&&el.hidden){el.hidden=false;el.classList.remove("enter");void el.offsetWidth;el.classList.add("enter")}else if(!show)el.hidden=true});
   document.querySelectorAll(".nav a").forEach(a=>{if(a.dataset.v===v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
   window.scrollTo(0,0);
 }
