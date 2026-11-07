@@ -426,6 +426,7 @@ const doneToday=t=>(t.log&&t.log[iso(new Date())])||0;
 function plan(){
   const today=iso(new Date()),P={},used={},unfit=[],first={};
   used[today]=S.tasks.reduce((a,t)=>a+doneToday(t),0);
+  for(const t of S.tasks)if(!t.done&&!t.pin&&!t.recId)t.pin=t.due;
   for(const t of S.tasks){
     if(t.done||remaining(t)<=0.01||!t.pin)continue;
     const d=t.pin<today?today:t.pin,h=remaining(t);
@@ -922,7 +923,7 @@ function learnFrom(t){
 // ---------- quick add ----------
 let qa={};
 const WD={lunes:0,martes:1,"miércoles":2,miercoles:2,jueves:3,viernes:4,"sábado":5,sabado:5,domingo:6};
-function resetQa(){const keep=qa&&qa.more;const vd=view.tab==="dia"?iso(addDays(parse(view.week),view.day)):null,onDay=vd&&vd>iso(new Date())?vd:null;qa={more:keep,onDay,due:onDay||iso(addDays(new Date(),2)),size:"media",hours:null,prio:"media",rep:[],tDue:false,tSize:false,tPrio:false,tRep:false}}
+function resetQa(){const keep=qa&&qa.more;const vd=view.tab==="dia"?iso(addDays(parse(view.week),view.day)):null,onDay=vd&&vd>iso(new Date())?vd:iso(new Date());qa={more:keep,onDay,due:onDay,size:"media",hours:null,prio:"media",rep:[],tDue:false,tSize:false,tPrio:false,tRep:false}}
 function parseQa(txt){
   const low=txt.toLowerCase(),now=new Date(),out={};let clean=txt;
   const strip=re=>{clean=clean.replace(re," ")};
@@ -970,7 +971,7 @@ function renderChips(){
 }
 function openEdit(id){
   const t=S.tasks.find(v=>v.id===id);if(!t)return;
-  qa={editId:id,due:t.due,size:t.size||"media",hours:t.userTime?t.hours:null,prio:t.prio,pin:t.pin||null,isRec:!!t.recId,recId:t.recId||null,panel:null,tDue:true,tSize:true,tPrio:true};
+  qa={editId:id,due:t.recId?t.due:(t.pin&&t.pin>iso(new Date())?t.pin:t.pin?iso(new Date()):t.due),size:t.size||"media",hours:t.userTime?t.hours:null,prio:t.prio,pin:t.pin||null,isRec:!!t.recId,recId:t.recId||null,panel:null,tDue:true,tSize:true,tPrio:true};
   const sh=$("#sheet");sh.dataset.kind="edit";sh.classList.add("compact");
   sh.innerHTML=`<div class="grab" aria-hidden="true"></div>
   <div class="ed-top"><span class="ed-k">Editar tarea</span>${t.recId?`<span class="ed-rec">${QI.rep}${daysTxt((S.recurring||[]).find(r=>r.id===t.recId)?.days||[])}</span>`:""}</div>
@@ -983,8 +984,7 @@ function openEdit(id){
 function saveEdit(){
   const t=S.tasks.find(v=>v.id===qa.editId);if(!t)return closeSheet();
   const title=$("#edTitle").value.trim();if(title)t.title=title;
-  t.due=qa.due;t.prio=qa.prio;
-  if(!t.recId){if(qa.pin)t.pin=qa.pin;else delete t.pin}
+  if(!t.recId){if(qa.due!==(t.pin||t.due)){t.pin=qa.due;t.due=qa.due}}else t.due=qa.due;t.prio=qa.prio;
   if(qa.tSizeChanged&&qa.hours){t.hours=qa.hours;if(t.est)learnFrom(t);t.userTime=true;delete t.est}
   if(qa.tSizeChanged&&!qa.hours&&!t.recId){delete t.userTime;const e=estimateLocal(title||t.title);Object.assign(t,{hours:e.hours,rule:e.rule,units:e.units,est:"auto"})}
   if(t.recId&&qa.tSizeChanged&&qa.hours){const r=(S.recurring||[]).find(r=>r.id===t.recId);if(r){r.hours=qa.hours;r.userTime=true;delete r.est;S.tasks.forEach(v=>{if(v.recId===r.id&&!v.done){v.hours=r.hours;v.userTime=true;delete v.est}})}}
@@ -1042,7 +1042,7 @@ function renderEditBar(){
   let panel="";
   if(P==="date"){
     const opts=[0,1,2,3,4,5,6].map(day),custom=!opts.some(o=>o[0]===qa.due);
-    panel=`<div class="pop-k">Fecha límite</div><div class="chips">${opts.map(([v,l])=>chip("qd",v,l,qa.due===v)).join("")}<label class="ch ${custom?"on":""}">${custom?fmtShort(qa.due):"Otra fecha"}<input type="date" id="qaDate" value="${qa.due}" aria-label="Otra fecha"></label></div>`;
+    panel=`<div class="pop-k">Qué día la haces</div><div class="chips">${opts.map(([v,l])=>chip("qd",v,l,qa.due===v)).join("")}<label class="ch ${custom?"on":""}">${custom?fmtShort(qa.due):"Otra fecha"}<input type="date" id="qaDate" value="${qa.due}" aria-label="Otra fecha"></label></div>`;
   }else if(P==="pin"){
     panel=`<div class="pop-k">Hacerla el día · Auto deja que la app elija</div><div class="chips">${chip("qpin","auto","Auto",!qa.pin)}${[0,1,2,3,4,5,6].map(day).map(([v,l])=>chip("qpin",v,l,qa.pin===v)).join("")}</div>`;
   }else if(P==="time"){
@@ -1053,10 +1053,10 @@ function renderEditBar(){
   if(P==="time"&&qa.hours)attachDurWheel();
   const PIN=`<svg viewBox="0 0 24 24"><path d="M9 3h6l-.9 6 3.2 3.3H6.7L9.9 9 9 3zM12 12.3V21"/></svg>`;
   $("#qaChips").innerHTML=`<div class="qa-bar">
-    ${qa.isRec?"":`<button type="button" class="qb qb-date ${P==="date"?"open":""}" data-qpanel="date" aria-label="Fecha límite">${QI.cal}<span>${dueLabel(qa.due)}</span></button>
-    <button type="button" class="qb ${qa.pin?"set":""} ${P==="pin"?"open":""}" data-qpanel="pin" aria-label="Día en que hacerla">${PIN}<span>${qa.pin?dueLabel(qa.pin):"Auto"}</span></button>`}
+    ${qa.isRec?"":`<button type="button" class="qb qb-date ${P==="date"?"open":""}" data-qpanel="date" aria-label="Día">${QI.cal}<span>${dueLabel(qa.due)}</span></button>
+`}
     <button type="button" class="qb ${qa.hours&&qa.tSizeChanged?"set":""} ${P==="time"?"open":""}" data-qpanel="time" aria-label="Tiempo">${QI.clock}<span>${qa.hours?fmtH(qa.hours):"Auto"}</span></button>
-    <button type="button" class="qb qb-imp ${qa.prio==="alta"?"set":qa.prio==="baja"?"low":""}" id="qaImp" aria-label="Importancia">!</button>
+    <button type="button" class="qb qb-imp ${qa.prio==="alta"?"set":qa.prio==="baja"?"low":""}" id="qaImp" aria-label="Importancia"><b>!</b><span>${qa.prio==="alta"?"Importante":qa.prio==="baja"?"Baja":"Normal"}</span></button>
     <span class="qa-sp"></span>
     <button type="button" class="qa-send" id="edSave" aria-label="Guardar"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
   </div>`;
@@ -1331,7 +1331,7 @@ function unSeg(x){const d=iso(new Date());x.segs=(x.segs||[]).filter(g=>g.d!==d)
 function completeChunk(id,h){const x=S.tasks.find(v=>v.id===id);if(!x)return;vtNext=true;x.doneAt=Date.now();markSeg(x,h||remaining(x));
   if(h){const d=iso(new Date());x.log=x.log||{};x.log[d]=(x.log[d]||0)+h;if(remaining(x)<=0.01)x.done=true}else x.done=true;
   dropExample();commit()}
-function pinTo(id,date){const x=S.tasks.find(v=>v.id===id);if(!x)return;vtNext=true;x.pin=date;
+function pinTo(id,date){const x=S.tasks.find(v=>v.id===id);if(!x)return;vtNext=true;x.pin=date;if(!x.recId&&date>x.due)x.due=date;
   for(const d in S.order||{})S.order[d]=S.order[d].filter(v=>v!==id);dropExample();commit()}
 let G=null;
 document.addEventListener("pointerdown",e=>{
